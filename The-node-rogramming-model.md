@@ -122,4 +122,81 @@ async.waterfall([
     }
 );
 ```
-45
+### The queue model
+Queue modal cho phép thực thi các task theo queue. Các task này hoàn toàn có thể add vào bất cứ lúc nào (dynamically). Phù hợp với bài toán producer-consumer.
+
+```javascript
+var async = require("async");
+var queue = async.queue(function(task, callback) {
+    // process the task argument
+    console.log(task);
+    callback(null);
+}, 4);
+```
+
+task handler chứa 2 params:
+- `task` : object define the task
+- `callback` : shoud call with an error once task is processed
+Level của queue dùng để chỉ số task được excute đồng thời.
+
+Sau khi queue setup, có thể thêm task vào bằng `push()/unshift()` với task hoặc [task] và optinal callback
+
+```javascript
+var i = 0;
+setInterval(function() {
+    queue.push({
+        id: i
+    }, function(error) {
+        console.log("Finished a task");
+    });
+    i++;
+}, 200);
+```
+Control num of task at runtime
+```javascript
+if (queue.length() > threshold) {
+    queue.concurrency = 8;
+}
+```
+
+```javascript
+queue.saturated = function() {
+    // queue length equal to it's concurrency
+    console.log("Queue is saturated");
+};
+queue.empty = function() {
+    // last task is removed from the queue
+    console.log("Queue is empty");
+};
+queue.drain = function() {
+    // last task completely processed
+    console.log("Queue is drained");
+};
+```
+
+### Repeating Methods
+Repeatly call a function until condition match. Giống với js methd thôi nhưng mà nó chạy async, không block thread.
+
+```javascript
+var async = require("async");
+var i = 0;
+async.whilst(function() {
+    // sync truth test
+    return i < 5;
+}, function(callback) {
+    // excute when test true
+    setTimeout(function() {
+        console.log("i = " + i);
+        i++;
+        callback(null);
+    }, 1000);
+}, function(error) {
+    console.log("Done!");
+});
+```
+
+Some other method:
+`async.doWhilst(body, test, callback)`
+`async.until(test, body, callback)`
+`async.doUntil(body, test, callback)`
+`memoize(), unmemoize(), each(), map(), filter(), reduce(), some(), and every()`
